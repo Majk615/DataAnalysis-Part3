@@ -1,0 +1,4 @@
+Wartoœæ œrednia: 5.759375000372529
+Wartoœæ maksymalna: 15.0
+Wartoœæ minimalna: 0.300000011920929
+Wartoœæ wspó³czynnika ISE: 1020.0
