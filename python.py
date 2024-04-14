@@ -18,7 +18,7 @@ plc.connect('169.254.90.50', 0, 1)
 #Główna funkcja main przetwarzajaca dane
 def main():
     stabilizacja = 0
-    delta = 1
+    delta = 0.5
     stara = None 
     uchyb_wartosci = []
     
@@ -31,14 +31,13 @@ def main():
         
         if stara is None or setpoint != stara:  # Sprawdzenie, czy wartość setpoint zmieniła się
             stara = setpoint  # Zaktualizowanie zmiennej stara
-            srednia, maks, min = fun1()  # Wywołanie fun1 tylko raz po zmianie setpoint
+            srednia, maks, min = fun1() # Wywołanie fun1 tylko raz po zmianie setpoint
         if setpoint == stara:
             if setpoint - delta <= nowe_Wy <= setpoint + delta:
                 stabilizacja += 1
                 if stabilizacja >= 10:
-                    Wsp_ISE(uchyb_wartosci, dt)
                     print("tab: ", uchyb_wartosci)
-                    Zapis_txt(srednia, maks, min, Wsp_ISE(uchyb_wartosci, dt))
+                    Zapis_txt(srednia, maks, min, Wsp_ISE(uchyb_wartosci), dt)
                     Wyjscie_odczyt()
                     stabilizacja = 0
             else:
@@ -58,8 +57,8 @@ def PLC_COM():
     Length_1 = 4
 
     # Zwrot wartosci wyjscia
-    DB_number_2 = 2
-    Offset_number_2 = 0
+    DB_number_2 = 1
+    Offset_number_2 = 4
     Length_2 = 4
 
     # Zwrot wartosci uchybu
@@ -106,11 +105,11 @@ def średnia_wynik(size, y):
 
 
 #Funkcja wyliczająca współczynnik ISE, przyjmuje wartosci uchybu oraz czas, w jakim te wartosci wystepowaly
-#Całka z kwadratur uchybu po czasie
-def Wsp_ISE(errors, dt):
+#Całka z kwadratu uchybu po czasie
+def Wsp_ISE(errors):
     ISE = 0
     for error in errors:
-        ISE += error ** 2 * dt  # Dodanie do sumy kwadratu błędu pomnożonego przez krok czasowy
+        ISE += (error ** 2)  # Dodanie do sumy kwadratu błędu pomnożonego przez krok czasowy
     print("Warość współcznnnika ISE: ", ISE)
     return ISE
 
@@ -173,7 +172,7 @@ def fun1():
 
     #Wartość średnia
     wynik_srednia = str(średnia_wynik(size, y))
-
+    
     #Wyswietlanie wartosci na wykresie (punkty)
     plt.figure()
     plt.scatter(x, y)
@@ -216,7 +215,7 @@ def Wyjscie_zapis_srawdz():
     #Połączenie nowych i starych danych tak, aby sie nie nadpisywały
     df_combined = pd.concat([df_existing, df_new], ignore_index=True)
     df_combined.to_excel("Wyjscie.xlsx", index=False)
-    time.sleep(0.5)
+    #time.sleep(0.001)
 
 
 def Wyjscie_odczyt():
@@ -240,13 +239,14 @@ def Wyjscie_odczyt():
     plt.show()
 
 
-def Zapis_txt(srednia, maks, min, ISE): 
+def Zapis_txt(srednia, maks, min, ISE, dt): 
     #Zapis do pliku
     f = open("Wyniki.txt", "w")
     f.write("Wartość średnia: " + srednia +'\n')
     f.write("Wartość maksymalna: " + maks +'\n')
     f.write("Wartość minimalna: " + min +'\n')
     f.write("Wartość współczynnika ISE: " + str(ISE) +'\n')
+    f.write("Czas regulacji: " + str(dt) + "s"+'\n')
     f.close()
 
 main()
